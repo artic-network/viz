@@ -178,7 +178,7 @@
             const gammaVal = gammaFunction(shape);
             
             // For high alpha, use Wilson-Hilferty directly (very accurate)
-            if (shape > 30) {
+            if (shape > 20) {
                 const z = Math.sqrt(2) * erfInv(2 * p - 1);
                 const w = 1 - 1/(9*shape) + z/(3*Math.sqrt(shape));
                 return shape * Math.pow(Math.max(0.001, w), 3) * scale;
