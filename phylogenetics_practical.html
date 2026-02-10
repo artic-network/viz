@@ -891,26 +891,37 @@ iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -g constraint.txt -pre cons
             if (p > 0.9999) p = 0.9999; // Numerical stability
             
             const expectedMean = shape * scale;
+            const gammaVal = gammaFunction(shape);
             
             // Establish bracket [lower, upper] where CDF(lower) < p < CDF(upper)
             let lower = 0;
             let upper = expectedMean * 3;
             
             // Expand upper bound if needed
-            while (incompleteGamma(shape, upper/scale) / gammaFunction(shape) < p) {
+            while (incompleteGamma(shape, upper/scale) / gammaVal < p) {
                 upper *= 2;
                 if (upper > 1e10) break;
             }
             
-            // Initial guess
-            let x = expectedMean * (0.5 + p * 0.5);
+            // Better initial guess using Wilson-Hilferty transformation
+            const z = Math.sqrt(2) * erfInv(2 * p - 1);
+            const w = 1 - 1/(9*shape) + z/(3*Math.sqrt(shape));
+            let x = shape * Math.pow(Math.max(0.01, w), 3) * scale;
             
-            // Hybrid iteration
-            for (let i = 0; i < 100; i++) {
-                const cdf = incompleteGamma(shape, x/scale) / gammaFunction(shape);
+            // Ensure initial guess is within bracket
+            x = Math.max(lower, Math.min(upper, x));
+            
+            // Hybrid iteration with tighter convergence
+            const tolerance = 1e-12; // Much tighter tolerance
+            for (let i = 0; i < 200; i++) {
+                const cdf = incompleteGamma(shape, x/scale) / gammaVal;
                 const error = cdf - p;
                 
-                if (Math.abs(error) < 1e-10) break;
+                // Check convergence
+                if (Math.abs(error) < tolerance) break;
+                
+                // Also check if bracket is tight enough
+                if (upper - lower < tolerance * x) break;
                 
                 // Update bracket
                 if (error < 0) {
@@ -925,8 +936,9 @@ iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -g constraint.txt -pre cons
                     const delta = error / pdf;
                     const xNew = x - delta;
                     
-                    // Accept Newton-Raphson only if within bracket
-                    if (xNew > lower && xNew < upper) {
+                    // Accept Newton-Raphson only if within bracket with margin
+                    const margin = (upper - lower) * 0.01;
+                    if (xNew > lower + margin && xNew < upper - margin) {
                         x = xNew;
                         continue;
                     }
