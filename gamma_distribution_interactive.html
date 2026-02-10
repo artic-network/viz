@@ -322,7 +322,11 @@
             for (let i = 1; i <= numCats; i++) {
                 const q = gammaQuantile(i / numCats, alpha, 1/beta);
                 // Ensure monotonic increase
-                quantiles.push(Math.max(quantiles[i-1] + 0.0001, q));
+                const monotonic = Math.max(quantiles[i-1] + 0.0001, q);
+                quantiles.push(monotonic);
+                if (alpha > 5 && i <= 10) {
+                    console.log(`alpha=${alpha.toFixed(2)}, cat=${i}, p=${(i/numCats).toFixed(3)}, q=${q.toFixed(6)}, monotonic=${monotonic.toFixed(6)}`);
+                }
             }
             
             for (let i = 0; i < numCats; i++) {
