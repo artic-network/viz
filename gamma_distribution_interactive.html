@@ -295,9 +295,9 @@
                 }
             }
             
-            // Draw discrete rate category bars with equal areas (equal probability)
-            // Each bar represents 1/n probability, so area = 1/n
-            // Height = probability / width
+            // Draw discrete rate category bars
+            // Heights match the gamma PDF at the category's mean rate for better visual fit
+            // Widths are determined by quantiles (equal probability regions)
             const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', 
                           '#1abc9c', '#e67e22', '#34495e', '#16a085', '#27ae60'];
             
@@ -310,12 +310,11 @@
                 const rLow = gammaQuantile(qLow, alpha, 1/beta);
                 const rHigh = gammaQuantile(qHigh, alpha, 1/beta);
                 
-                // Bar width in rate space
-                const barWidth = rHigh - rLow;
+                // Use the mean rate for this category (from discretization)
+                const meanRate = rates[i];
                 
-                // Height = probability / width to get equal areas
-                const probability = 1 / numCats;
-                const barHeight = probability / barWidth;
+                // Height matches the gamma PDF at the mean rate
+                const barHeight = gammaPDF(meanRate, alpha, 1/beta);
                 
                 // Clip bar if it extends beyond maxX
                 const xStart = rLow;
