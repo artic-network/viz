@@ -885,64 +885,55 @@ iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -g constraint.txt -pre cons
         }
         
         function gammaQuantile(p, shape, scale) {
-            // Approximate quantile function for gamma distribution
+            // Hybrid bisection/Newton-Raphson for robust quantile calculation
             if (p <= 0) return 0;
             if (p >= 1) return Infinity;
+            if (p > 0.9999) p = 0.9999; // Numerical stability
             
-            // For high alpha values, use normal approximation
-            if (shape > 50) {
-                // Normal approximation: Gamma(alpha, beta) ≈ N(alpha*theta, alpha*theta^2)
-                const mean = shape * scale;
-                const std = Math.sqrt(shape) * scale;
-                const z = Math.sqrt(2) * erfInv(2 * p - 1);
-                return Math.max(0.001, mean + z * std);
-            }
-            
-            // Wilson-Hilferty transformation for initial guess
-            const z = Math.sqrt(2) * erfInv(2 * p - 1);
-            const w = 1 - 1/(9*shape) + z/(3*Math.sqrt(shape));
-            let x = shape * Math.pow(Math.max(0.01, w), 3) * scale;
-            x = Math.max(0.001, x);
-            
-            // Sanity check on initial guess
             const expectedMean = shape * scale;
-            if (x > expectedMean * 10) {
-                // Initial guess is way off, use simpler estimate
-                x = expectedMean * (1 + z / Math.sqrt(shape));
-                x = Math.max(0.001, x);
+            
+            // Establish bracket [lower, upper] where CDF(lower) < p < CDF(upper)
+            let lower = 0;
+            let upper = expectedMean * 3;
+            
+            // Expand upper bound if needed
+            while (incompleteGamma(shape, upper/scale) / gammaFunction(shape) < p) {
+                upper *= 2;
+                if (upper > 1e10) break;
             }
             
-            // Newton-Raphson with safeguards
-            let lastX = x;
-            for (let i = 0; i < 30; i++) {
+            // Initial guess
+            let x = expectedMean * (0.5 + p * 0.5);
+            
+            // Hybrid iteration
+            for (let i = 0; i < 100; i++) {
                 const cdf = incompleteGamma(shape, x/scale) / gammaFunction(shape);
-                const pdf = gammaPDF(x, shape, scale);
-                
-                if (!isFinite(cdf) || !isFinite(pdf) || pdf === 0) {
-                    // Numerical issues, return best guess
-                    return Math.max(0.001, lastX);
-                }
-                
                 const error = cdf - p;
+                
                 if (Math.abs(error) < 1e-10) break;
                 
-                const dx = error / pdf;
-                
-                // Limit step size to prevent wild jumps
-                const maxStep = x * 0.5;
-                const limitedDx = Math.max(-maxStep, Math.min(maxStep, dx));
-                
-                lastX = x;
-                x = Math.max(0.001, x - limitedDx);
-                
-                // Check for convergence
-                if (Math.abs(limitedDx) < 1e-10 * x) break;
-                
-                // Check if we're oscillating or diverging
-                if (i > 10 && Math.abs(x - lastX) > Math.abs(dx)) {
-                    // Not converging well, return current best
-                    return x;
+                // Update bracket
+                if (error < 0) {
+                    lower = x;
+                } else {
+                    upper = x;
                 }
+                
+                // Try Newton-Raphson step
+                const pdf = gammaPDF(x, shape, scale);
+                if (pdf > 1e-100) {
+                    const delta = error / pdf;
+                    const xNew = x - delta;
+                    
+                    // Accept Newton-Raphson only if within bracket
+                    if (xNew > lower && xNew < upper) {
+                        x = xNew;
+                        continue;
+                    }
+                }
+                
+                // Fall back to bisection
+                x = (lower + upper) / 2;
             }
             
             return x;
