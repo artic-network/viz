@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Discrete Gamma Distribution for Rate Heterogeneity</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        p {
+            color: #333;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Discrete Gamma Distribution for Rate Heterogeneity</h1>
+        
+        <div style="background-color: #fafafa; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #ddd;">
+            <h4 style="margin-top: 0; color: #34495e;">Interactive Visualization</h4>
+            <p>
+                The plot below shows how the continuous gamma distribution (black curve) is discretized into rate categories (colored bars). Each category represents a range of evolutionary rates, and sites are assigned to categories based on their inferred substitution rates. The mean rate across all categories is normalized to 1.0.
+            </p>
+            
+            <div style="margin: 20px 0; display: flex; gap: 30px; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <label for="alphaSlider" style="font-weight: bold; display: block; margin-bottom: 5px;">
+                        Shape parameter (α): <span id="alphaValue" style="color: #3498db;">0.5</span>
+                    </label>
+                    <input type="range" id="alphaSlider" min="-0.301" max="2" step="0.02" value="-0.301" 
+                           style="width: 250px; cursor: pointer;">
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                        Lower α = more rate variation (log scale: 0.5 to 100)
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="categoriesSlider" style="font-weight: bold; display: block; margin-bottom: 5px;">
+                        Number of categories: <span id="categoriesValue" style="color: #3498db;">4</span>
+                    </label>
+                    <input type="range" id="categoriesSlider" min="2" max="10" step="1" value="4" 
+                           style="width: 250px; cursor: pointer;">
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                        IQ-TREE typically uses 4 categories
+                    </div>
+                </div>
+            </div>
+            
+            <canvas id="gammaPlot" width="700" height="450" style="display: block; margin: 20px auto; border: 1px solid #ccc; background-color: white;"></canvas>
+            
+            <div style="margin-top: 15px; padding: 12px; background-color: #e3f2fd; border-radius: 4px;">
+                <strong>Rate categories and their relative rates:</strong>
+                <div id="rateInfo" style="margin-top: 8px; font-family: 'Courier New', monospace; font-size: 0.9em;"></div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 15px; background-color: #fff3e0; border-left: 4px solid #ff9800; border-radius: 4px;">
+            <strong>About this visualization:</strong>
+            <p style="margin: 10px 0;">
+                In phylogenetic analysis, the discrete gamma distribution (+G model) is used to account for rate heterogeneity across sites. 
+                The shape parameter α controls the amount of variation: lower values indicate more heterogeneity in substitution rates.
+            </p>
+            <p style="margin: 10px 0;">
+                Each colored bar represents a rate category with equal probability (equal area). Sites in the alignment are assigned 
+                to these categories, with different categories having different evolutionary rates. The height of each bar equals 
+                probability divided by width, ensuring all bars have equal area (1/n where n is the number of categories).
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Gamma distribution functions
+        function gammaFunction(z) {
+            // Lanczos approximation for gamma function
+            const g = 7;
+            const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+                       771.32342877765313, -176.61502916214059, 12.507343278686905,
+                       -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+            
+            if (z < 0.5) {
+                return Math.PI / (Math.sin(Math.PI * z) * gammaFunction(1 - z));
+            }
+            
+            z -= 1;
+            let x = c[0];
+            for (let i = 1; i < g + 2; i++) {
+                x += c[i] / (z + i);
+            }
+            
+            const t = z + g + 0.5;
+            return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+        }
+        
+        function gammaPDF(x, shape, scale) {
+            if (x <= 0) return 0;
+            const k = shape;
+            const theta = scale;
+            return Math.pow(x, k - 1) * Math.exp(-x / theta) / (Math.pow(theta, k) * gammaFunction(k));
+        }
+        
+        function incompleteGamma(s, x) {
+            // Lower incomplete gamma function using series expansion
+            if (x <= 0) return 0;
+            if (x < s + 1) {
+                let sum = 1 / s;
+                let term = 1 / s;
+                for (let n = 1; n < 100; n++) {
+                    term *= x / (s + n);
+                    sum += term;
+                    if (term < sum * 1e-10) break;
+                }
+                return Math.pow(x, s) * Math.exp(-x) * sum;
+            } else {
+                // Use continued fraction for large x
+                let a = 1 - s;
+                let b = a + x + 1;
+                let term = 0;
+                let pn = [1, x, x + 1, x * b];
+                let gamma = pn[2] / pn[3];
+                
+                for (let n = 1; n < 100; n++) {
+                    a++;
+                    b += 2;
+                    term++;
+                    const an = term * (s - term);
+                    pn[0] = b * pn[2] - an * pn[0];
+                    pn[1] = b * pn[3] - an * pn[1];
+                    
+                    if (Math.abs(pn[0]) > 1e30) {
+                        pn[0] /= 1e30;
+                        pn[1] /= 1e30;
+                        pn[2] /= 1e30;
+                        pn[3] /= 1e30;
+                    }
+                    
+                    if (pn[1] !== 0) {
+                        const oldGamma = gamma;
+                        gamma = pn[0] / pn[1];
+                        if (Math.abs(gamma - oldGamma) < Math.abs(gamma) * 1e-10) break;
+                    }
+                    
+                    pn[2] = pn[0];
+                    pn[3] = pn[1];
+                    pn[0] = b * pn[2] - an * term * (s - term);
+                    pn[1] = b * pn[3] - an * term * (s - term);
+                }
+                
+                return gammaFunction(s) - Math.pow(x, s) * Math.exp(-x) * gamma;
+            }
+        }
+        
+        function gammaQuantile(p, shape, scale) {
+            // Approximate quantile function for gamma distribution
+            if (p <= 0) return 0;
+            if (p >= 1) return Infinity;
+            
+            // Initial guess using Wilson-Hilferty approximation
+            const z = -Math.sqrt(2) * erfInv(1 - 2 * p);
+            let x = shape * Math.pow(1 - 1/(9*shape) + z/(3*Math.sqrt(shape)), 3) * scale;
+            
+            // Newton-Raphson refinement
+            for (let i = 0; i < 10; i++) {
+                const cdf = incompleteGamma(shape, x/scale) / gammaFunction(shape);
+                const pdf = gammaPDF(x, shape, scale);
+                if (pdf === 0) break;
+                const dx = (cdf - p) / pdf;
+                x -= dx;
+                if (Math.abs(dx) < 1e-6) break;
+            }
+            
+            return x;
+        }
+        
+        function erfInv(x) {
+            // Inverse error function approximation
+            const a = 0.147;
+            const b = 2 / (Math.PI * a) + Math.log(1 - x * x) / 2;
+            const sqrt1 = Math.sqrt(b * b - Math.log(1 - x * x) / a);
+            const sqrt2 = Math.sqrt(sqrt1 - b);
+            return (x < 0 ? -1 : 1) * sqrt2;
+        }
+        
+        function getDiscreteGammaRates(alpha, numCats) {
+            const beta = alpha; // Scale parameter = shape for mean = 1
+            const rates = [];
+            const probs = [];
+            
+            for (let i = 0; i < numCats; i++) {
+                const pLow = i / numCats;
+                const pHigh = (i + 1) / numCats;
+                
+                // Get quantiles
+                const qLow = gammaQuantile(pLow, alpha, 1/beta);
+                const qHigh = gammaQuantile(pHigh, alpha, 1/beta);
+                
+                // Mean rate for this category (using midpoint approximation)
+                const midQ = gammaQuantile((pLow + pHigh) / 2, alpha, 1/beta);
+                rates.push(midQ);
+                probs.push(1 / numCats);
+            }
+            
+            // Normalize so mean = 1
+            const mean = rates.reduce((sum, r) => sum + r, 0) / rates.length;
+            const normalizedRates = rates.map(r => r / mean);
+            
+            return { rates: normalizedRates, probs: probs };
+        }
+        
+        function drawGammaPlot() {
+            const canvas = document.getElementById('gammaPlot');
+            if (!canvas) return;
+            
+            // Convert log scale slider value to actual alpha
+            const alphaLog = parseFloat(document.getElementById('alphaSlider').value);
+            const alpha = Math.pow(10, alphaLog);
+            const numCats = parseInt(document.getElementById('categoriesSlider').value);
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 60;
+            const plotWidth = width - 2 * padding;
+            const plotHeight = height - 2 * padding - 50; // Extra space for info
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Get discrete rates for info display
+            const { rates, probs } = getDiscreteGammaRates(alpha, numCats);
+            const beta = alpha; // For mean = 1
+            
+            // Set up scale - x-axis to 5
+            const maxX = 5.0;
+            const maxY = Math.max(
+                gammaPDF(alpha / beta, alpha, 1/beta) * 1.2,
+                0.8
+            );
+            
+            const scaleX = (x) => padding + (x / maxX) * plotWidth;
+            const scaleY = (y) => height - padding - 40 - (y / maxY) * plotHeight;
+            
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, scaleY(0));
+            ctx.lineTo(width - padding, scaleY(0));
+            ctx.moveTo(padding, scaleY(0));
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+            
+            // Axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Relative substitution rate', width / 2, height - 10);
+            ctx.save();
+            ctx.translate(15, height / 2 - 20);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Probability Density / Frequency', 0, 0);
+            ctx.restore();
+            
+            // X-axis ticks
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.font = '12px Arial';
+            for (let i = 0; i <= 5; i++) {
+                const x = i;
+                if (x <= maxX) {
+                    const px = scaleX(x);
+                    ctx.fillText(x.toFixed(0), px, scaleY(0) + 5);
+                    ctx.beginPath();
+                    ctx.moveTo(px, scaleY(0));
+                    ctx.lineTo(px, scaleY(0) + 5);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw discrete rate category bars with equal areas (equal probability)
+            // Each bar represents 1/n probability, so area = 1/n
+            // Height = probability / width
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', 
+                          '#1abc9c', '#e67e22', '#34495e', '#16a085', '#27ae60'];
+            
+            for (let i = 0; i < numCats; i++) {
+                // Get quantile boundaries for this category
+                const qLow = i / numCats;
+                const qHigh = (i + 1) / numCats;
+                
+                // Get rate boundaries from quantiles
+                const rLow = gammaQuantile(qLow, alpha, 1/beta);
+                const rHigh = gammaQuantile(qHigh, alpha, 1/beta);
+                
+                // Bar width in rate space
+                const barWidth = rHigh - rLow;
+                
+                // Height = probability / width to get equal areas
+                const probability = 1 / numCats;
+                const barHeight = probability / barWidth;
+                
+                // Clip bar if it extends beyond maxX
+                const xStart = rLow;
+                const xEnd = Math.min(rHigh, maxX);
+                
+                if (xStart < maxX) {
+                    const x = scaleX(xStart);
+                    const y = scaleY(barHeight);
+                    const w = scaleX(xEnd) - scaleX(xStart);
+                    const h = scaleY(0) - y;
+                    
+                    ctx.fillStyle = colors[i % colors.length] + 'CC';
+                    ctx.fillRect(x, y, w, h);
+                    
+                    ctx.strokeStyle = colors[i % colors.length];
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, w, h);
+                }
+            }
+            
+            // Draw continuous gamma distribution
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            let first = true;
+            for (let x = 0.01; x <= maxX; x += 0.02) {
+                const y = gammaPDF(x, alpha, 1/beta);
+                const px = scaleX(x);
+                const py = scaleY(y);
+                if (first) {
+                    ctx.moveTo(px, py);
+                    first = false;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+            
+            // Draw mean line
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(scaleX(1), padding);
+            ctx.lineTo(scaleX(1), scaleY(0));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Mean = 1.0', scaleX(1), padding - 5);
+            
+            // Title
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Discrete Gamma Distribution (α = ${alpha.toFixed(2)}, ${numCats} categories)`, 
+                        width / 2, 25);
+            
+            // Update rate info
+            updateRateInfo(rates, probs);
+        }
+        
+        function updateRateInfo(rates, probs) {
+            const infoDiv = document.getElementById('rateInfo');
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">';
+            
+            for (let i = 0; i < rates.length; i++) {
+                html += `<div>Category ${i + 1}: rate = ${rates[i].toFixed(4)} (${(probs[i] * 100).toFixed(1)}%)</div>`;
+            }
+            
+            html += '</div>';
+            infoDiv.innerHTML = html;
+        }
+        
+        // Event listeners for sliders
+        document.addEventListener('DOMContentLoaded', function() {
+            const alphaSlider = document.getElementById('alphaSlider');
+            const categoriesSlider = document.getElementById('categoriesSlider');
+            const alphaValue = document.getElementById('alphaValue');
+            const categoriesValue = document.getElementById('categoriesValue');
+            
+            if (alphaSlider) {
+                alphaSlider.addEventListener('input', function() {
+                    const alpha = Math.pow(10, parseFloat(this.value));
+                    alphaValue.textContent = alpha < 1 ? alpha.toFixed(2) : alpha.toFixed(1);
+                    drawGammaPlot();
+                });
+                // Set initial value
+                const initialAlpha = Math.pow(10, parseFloat(alphaSlider.value));
+                alphaValue.textContent = initialAlpha.toFixed(2);
+            }
+            
+            if (categoriesSlider) {
+                categoriesSlider.addEventListener('input', function() {
+                    categoriesValue.textContent = this.value;
+                    drawGammaPlot();
+                });
+            }
+            
+            // Initial draw
+            drawGammaPlot();
+        });
+    </script>
+</body>
+</html>

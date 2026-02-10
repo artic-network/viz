@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Phylogenetics Practical: Whippomorpha</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #546e7a;
+            margin-top: 20px;
+        }
+        .question {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .question strong {
+            color: #1565c0;
+        }
+        .objective {
+            background-color: #f1f8e9;
+            border-left: 4px solid #7cb342;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .command {
+            background-color: #263238;
+            color: #aed581;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .note {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #c7254e;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .section-number {
+            color: #3498db;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Molecular Phylogenetics Practical: Inferring the Evolutionary Relationships of Whippomorpha</h1>
+        
+        <div class="objective">
+            <strong>Learning Objectives:</strong>
+            <ul>
+                <li>Understand the principles of maximum likelihood phylogenetic inference</li>
+                <li>Explore different nucleotide substitution models and their biological assumptions</li>
+                <li>Investigate the impact of site rate heterogeneity on phylogenetic inference</li>
+                <li>Apply likelihood ratio tests for model comparison</li>
+                <li>Use bootstrapping to assess confidence in phylogenetic hypotheses</li>
+                <li>Evaluate concepts of monophyly in molecular phylogenetics</li>
+            </ul>
+        </div>
+
+        <h2><span class="section-number">1.</span> Introduction to Whippomorpha</h2>
+        
+        <h3>1.1 The Biology of Cetaceans and Hippopotamids</h3>
+        <p>
+            Whippomorpha is a fascinating clade that unites two seemingly disparate groups of mammals: the cetaceans (whales, dolphins, and porpoises) and the hippopotamids (hippopotamuses). This remarkable evolutionary relationship was first suggested by molecular data in the 1990s and has since been corroborated by both genetic and morphological evidence, including fossil discoveries.
+        </p>
+        
+        <p>
+            Cetaceans represent one of the most dramatic evolutionary transitions in mammalian history—from terrestrial to fully aquatic life. Modern cetaceans are divided into two major groups: the Mysticeti (baleen whales) and the Odontoceti (toothed whales). The latter includes the sperm whales (family Physeteridae), which are among the largest predators to have ever existed. The sperm whale (<em>Physeter macrocephalus</em>) can dive to depths exceeding 2,000 meters in search of giant squid and other prey.
+        </p>
+        
+        <p>
+            Hippopotamids, represented today by only two species (<em>Hippopotamus amphibius</em> and <em>Choeropsis liberiensis</em>), are semi-aquatic herbivorous mammals native to Africa. Despite their morphological similarities to pigs, hippos are more closely related to whales than to any other living ungulate group.
+        </p>
+
+        <div class="question">
+            <strong>Discussion Question 1.1:</strong> Why might traditional morphology-based taxonomy have missed the close relationship between cetaceans and hippopotamids? What types of morphological characters might have been misleading?
+        </div>
+
+        <h3>1.2 The Position of Sperm Whales</h3>
+        <p>
+            Within the Odontoceti, the phylogenetic position of sperm whales has been debated. Sperm whales possess unique morphological characteristics, including the largest brain of any animal and an enormous spermaceti organ in their heads. Understanding their evolutionary relationships to other toothed whales provides insights into the evolution of echolocation, deep-diving adaptations, and social behavior in cetaceans.
+        </p>
+
+        <div class="question">
+            <strong>Discussion Question 1.2:</strong> In this practical, we will use hippos as an outgroup. What is the purpose of an outgroup in phylogenetic analysis? What characteristics make a taxon suitable as an outgroup?
+        </div>
+
+        <h3>1.3 Cytochrome Oxidase I as a Phylogenetic Marker</h3>
+        <p>
+            For this practical, we will use the Cytochrome Oxidase I (COI) gene from the mitochondrial genome. COI is part of the electron transport chain in mitochondria and is essential for cellular respiration. This gene has become one of the most widely used molecular markers in animal phylogenetics and DNA barcoding.
+        </p>
+        
+        <p>
+            Mitochondrial genes like COI offer several advantages for phylogenetic studies:
+        </p>
+        <ul>
+            <li><strong>Maternal inheritance:</strong> Generally inherited as a single unit without recombination</li>
+            <li><strong>High copy number:</strong> Easier to sequence, even from degraded samples</li>
+            <li><strong>Moderate evolutionary rate:</strong> Suitable for resolving relationships at various taxonomic levels</li>
+            <li><strong>Coding sequence:</strong> Allows analysis of synonymous vs. non-synonymous substitutions</li>
+        </ul>
+
+        <div class="question">
+            <strong>Discussion Question 1.3:</strong> What are potential limitations of using mitochondrial markers for phylogenetic inference? Consider phenomena such as incomplete lineage sorting, introgression, and selection.
+        </div>
+
+        <h2><span class="section-number">2.</span> Principles of Maximum Likelihood Phylogenetic Inference</h2>
+
+        <h3>2.1 What is Maximum Likelihood?</h3>
+        <p>
+            Maximum likelihood (ML) is a statistical method for estimating phylogenetic trees and the parameters of evolutionary models. The fundamental principle is to find the tree topology and branch lengths that maximize the probability (likelihood) of observing the actual DNA sequence data, given a particular model of molecular evolution.
+        </p>
+        
+        <p>
+            Formally, for a given tree topology <em>T</em>, branch lengths <em>v</em>, and substitution model parameters <em>θ</em>, the likelihood <em>L</em> of observing the data <em>D</em> is:
+        </p>
+        
+        <p style="text-align: center; font-style: italic;">
+            L(T, v, θ | D) = P(D | T, v, θ)
+        </p>
+        
+        <p>
+            In practice, we work with the log-likelihood (lnL) because it is computationally more tractable and avoids numerical underflow issues. The tree with the highest log-likelihood is considered the best estimate of the true phylogenetic tree.
+        </p>
+
+        <h3>2.2 Calculating Likelihood on a Phylogenetic Tree</h3>
+        <p>
+            The likelihood calculation proceeds through several steps:
+        </p>
+        <ol>
+            <li><strong>Assume a model of evolution:</strong> This specifies the probabilities of different types of nucleotide substitutions</li>
+            <li><strong>Calculate transition probabilities:</strong> For each branch, determine the probability of each possible nucleotide change given the branch length and model</li>
+            <li><strong>Apply Felsenstein's pruning algorithm:</strong> Recursively calculate the likelihood at each internal node by summing over all possible ancestral states, weighted by their probabilities</li>
+            <li><strong>Sum across sites:</strong> Calculate the total log-likelihood by summing the log-likelihoods across all sites in the alignment</li>
+        </ol>
+
+        <div class="question">
+            <strong>Discussion Question 2.1:</strong> Why do we assume that different sites in a DNA sequence evolve independently when calculating the likelihood? Is this assumption realistic? What biological processes might violate this assumption?
+        </div>
+
+        <h3>2.3 Heuristic Tree Searches</h3>
+        <p>
+            Finding the ML tree is an NP-hard computational problem. For even a moderate number of taxa, it is impossible to evaluate all possible tree topologies. For example, for 10 taxa, there are 34,459,425 possible unrooted trees; for 20 taxa, this number exceeds 8.2 × 10<sup>21</sup>.
+        </p>
+        
+        <p>
+            Therefore, phylogenetic programs use heuristic search strategies to explore tree space efficiently:
+        </p>
+        <ul>
+            <li><strong>Starting tree:</strong> Begin with an initial tree (e.g., from neighbor-joining or a random tree)</li>
+            <li><strong>Tree rearrangement:</strong> Systematically modify the tree using operations such as:
+                <ul>
+                    <li>Nearest Neighbor Interchange (NNI): Swap branches around an internal edge</li>
+                    <li>Subtree Pruning and Regrafting (SPR): Prune a subtree and reattach it elsewhere</li>
+                    <li>Tree Bisection and Reconnection (TBR): Split the tree and reconnect the pieces</li>
+                </ul>
+            </li>
+            <li><strong>Hill climbing:</strong> Accept new trees only if they improve the likelihood (or use more sophisticated approaches like stochastic hill climbing)</li>
+            <li><strong>Multiple starting points:</strong> Repeat the search from different starting trees to avoid local optima</li>
+        </ul>
+
+        <div class="question">
+            <strong>Discussion Question 2.2:</strong> Given that heuristic searches do not guarantee finding the globally optimal tree, how confident can we be in ML phylogenies? What strategies can we employ to increase our confidence?
+        </div>
+
+        <h2><span class="section-number">3.</span> Practical Exercises</h2>
+
+        <h3>3.1 Data Preparation</h3>
+        <p>
+            For this practical, you have been provided with COI sequences from various cetacean species and hippopotamids. The sequences are in FASTA format. Before we can perform phylogenetic analysis, we need to align these sequences to establish homology among nucleotide positions.
+        </p>
+
+        <div class="note">
+            <strong>Note:</strong> Ensure you have the following files in your working directory:
+            <ul>
+                <li><code>whippomorpha_COI.fasta</code> - Unaligned COI sequences</li>
+            </ul>
+        </div>
+
+        <h3>3.2 Sequence Alignment with MAFFT</h3>
+        <p>
+            MAFFT (Multiple Alignment using Fast Fourier Transform) is one of the most accurate and efficient multiple sequence alignment programs. It offers several algorithms optimized for different dataset sizes and characteristics.
+        </p>
+
+        <p>Align the sequences using MAFFT:</p>
+        <div class="command">
+mafft --auto whippomorpha_COI.fasta > whippomorpha_COI_aligned.fasta
+        </div>
+
+        <p>
+            The <code>--auto</code> flag allows MAFFT to automatically select the most appropriate alignment strategy based on the dataset size and characteristics.
+        </p>
+
+        <div class="question">
+            <strong>Discussion Question 3.1:</strong> Examine your alignment in a sequence viewer or text editor. Are there regions with gaps? What biological processes might cause insertions or deletions in protein-coding sequences like COI? How might alignment uncertainty affect phylogenetic inference?
+        </div>
+
+        <h2><span class="section-number">4.</span> Nucleotide Substitution Models</h2>
+
+        <h3>4.1 Why Do We Need Substitution Models?</h3>
+        <p>
+            Nucleotide substitution models are mathematical descriptions of how DNA sequences evolve over time. They specify the relative rates of different types of substitutions (e.g., transitions vs. transversions) and account for nucleotide frequency biases. Using an appropriate model is crucial because:
+        </p>
+        <ul>
+            <li>Different types of substitutions may occur at different rates due to biochemical constraints</li>
+            <li>Multiple substitutions at the same site (homoplasy) may occur, which simple pairwise distances do not account for</li>
+            <li>Nucleotide frequencies may deviate from 25% each due to mutational biases or selection</li>
+        </ul>
+
+        <h3>4.2 Common Substitution Models</h3>
+        <p>
+            Substitution models form a hierarchy of increasing complexity:
+        </p>
+        <ul>
+            <li><strong>JC69 (Jukes-Cantor):</strong> The simplest model, assuming all substitutions occur at equal rates and all nucleotide frequencies are equal (25% each)</li>
+            <li><strong>K80 (Kimura 2-parameter):</strong> Distinguishes between transitions (A↔G, C↔T) and transversions (purine↔pyrimidine), as transitions often occur more frequently</li>
+            <li><strong>HKY85 (Hasegawa-Kishino-Yano):</strong> Extends K80 by allowing unequal nucleotide frequencies</li>
+            <li><strong>TN93 (Tamura-Nei):</strong> Allows different rates for the two types of transitions (A↔G vs. C↔T)</li>
+            <li><strong>GTR (General Time Reversible):</strong> The most general reversible model, with six substitution rate parameters and four frequency parameters</li>
+        </ul>
+
+        <div class="question">
+            <strong>Discussion Question 4.1:</strong> Why might transitions occur more frequently than transversions? Consider the chemical structure of nucleotides and the mechanisms of DNA replication and repair.
+        </div>
+
+        <h3>4.3 Model Selection with IQ-TREE</h3>
+        <p>
+            IQ-TREE includes a sophisticated model selection tool (ModelFinder) that evaluates a large set of substitution models and selects the best one according to information criteria such as the Bayesian Information Criterion (BIC) or Akaike Information Criterion (AIC).
+        </p>
+
+        <p>Run model selection:</p>
+        <div class="command">
+iqtree -s whippomorpha_COI_aligned.fasta -m MFP -pre model_selection
+        </div>
+
+        <p>
+            The <code>-m MFP</code> flag stands for "ModelFinder Plus" and enables extended model selection. The <code>-pre</code> flag sets a prefix for output files.
+        </p>
+
+        <p>Examine the output file <code>model_selection.iqtree</code> to find:</p>
+        <ul>
+            <li>The best-fit model according to BIC</li>
+            <li>The log-likelihood scores of different models</li>
+            <li>Parameter estimates for the best model (substitution rates, nucleotide frequencies)</li>
+        </ul>
+
+        <div class="question">
+            <strong>Discussion Question 4.2:</strong> What model was selected as the best fit for your data? What does this tell you about the evolution of COI in Whippomorpha? How do the nucleotide frequencies differ from 25%, and what might explain this?
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 4.3:</strong> Compare the BIC and AIC results. Do they agree on the best model? The BIC applies a stronger penalty for model complexity than AIC. When might you prefer one criterion over the other?
+        </div>
+
+        <h2><span class="section-number">5.</span> Site Rate Heterogeneity</h2>
+
+        <h3>5.1 The Problem of Variable Rates Across Sites</h3>
+        <p>
+            Not all sites in a DNA sequence evolve at the same rate. In protein-coding genes like COI:
+        </p>
+        <ul>
+            <li><strong>Third codon positions</strong> often evolve faster than first and second positions (due to synonymous substitutions)</li>
+            <li><strong>Functionally important residues</strong> evolve slowly due to purifying selection</li>
+            <li><strong>Structurally flexible regions</strong> may tolerate more substitutions than constrained regions</li>
+        </ul>
+        
+        <p>
+            Failure to account for rate heterogeneity can lead to systematic errors in phylogenetic inference, including long-branch attraction artifacts.
+        </p>
+
+        <h3>5.2 Modeling Rate Heterogeneity</h3>
+        <p>
+            Two common approaches to model rate variation are:
+        </p>
+        <ul>
+            <li><strong>Discrete Gamma Distribution (+G):</strong> Sites are assigned to a small number of rate categories (typically 4) drawn from a gamma distribution. The shape parameter α determines how much variation there is (low α = high variation)</li>
+            <li><strong>Proportion of Invariable Sites (+I):</strong> Assumes a fraction of sites never change. This model accommodates the observation that many sites in conserved genes appear invariant</li>
+            <li><strong>Combined (+I+G):</strong> Uses both approaches, though this can sometimes lead to overparameterization</li>
+        </ul>
+
+        <div style="background-color: #fafafa; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #ddd;">
+            <h4 style="margin-top: 0; color: #34495e;">Interactive: Discrete Gamma Distribution for Rate Heterogeneity</h4>
+            <p>
+                The plot below shows how the continuous gamma distribution (black curve) is discretized into rate categories (colored bars). Each category represents a range of evolutionary rates, and sites are assigned to categories based on their inferred substitution rates. The mean rate across all categories is normalized to 1.0.
+            </p>
+            
+            <div style="margin: 20px 0; display: flex; gap: 30px; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <label for="alphaSlider" style="font-weight: bold; display: block; margin-bottom: 5px;">
+                        Shape parameter (α): <span id="alphaValue" style="color: #3498db;">0.5</span>
+                    </label>
+                    <input type="range" id="alphaSlider" min="-0.301" max="2" step="0.02" value="-0.301" 
+                           style="width: 250px; cursor: pointer;">
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                        Lower α = more rate variation (log scale: 0.5 to 100)
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="categoriesSlider" style="font-weight: bold; display: block; margin-bottom: 5px;">
+                        Number of categories: <span id="categoriesValue" style="color: #3498db;">4</span>
+                    </label>
+                    <input type="range" id="categoriesSlider" min="2" max="10" step="1" value="4" 
+                           style="width: 250px; cursor: pointer;">
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                        IQ-TREE typically uses 4 categories
+                    </div>
+                </div>
+            </div>
+            
+            <canvas id="gammaPlot" width="700" height="450" style="display: block; margin: 20px auto; border: 1px solid #ccc; background-color: white;"></canvas>
+            
+            <div style="margin-top: 15px; padding: 12px; background-color: #e3f2fd; border-radius: 4px;">
+                <strong>Rate categories and their relative rates:</strong>
+                <div id="rateInfo" style="margin-top: 8px; font-family: 'Courier New', monospace; font-size: 0.9em;"></div>
+            </div>
+        </div>
+
+        <h3>5.3 Testing the Effect of Rate Heterogeneity</h3>
+        <p>
+            Let's build trees with and without rate heterogeneity models to see the impact on the inferred phylogeny.
+        </p>
+
+        <p>First, build a tree using the best model without rate heterogeneity (assuming the best base model is GTR):</p>
+        <div class="command">
+iqtree -s whippomorpha_COI_aligned.fasta -m GTR -pre no_rate_het
+        </div>
+
+        <p>Now build a tree with gamma-distributed rate heterogeneity:</p>
+        <div class="command">
+iqtree -s whippomorpha_COI_aligned.fasta -m GTR+G4 -pre with_gamma
+        </div>
+
+        <p>And with a proportion of invariable sites:</p>
+        <div class="command">
+iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I -pre with_invariant
+        </div>
+
+        <p>Finally, with both:</p>
+        <div class="command">
+iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -pre with_both
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 5.1:</strong> Compare the log-likelihood values from the four analyses. How much does accounting for rate heterogeneity improve the model fit? Look at the estimated alpha parameter from the +G model—what does its value tell you about rate variation in your dataset?
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 5.2:</strong> Examine the tree topologies from each analysis (the .treefile outputs). Do they differ in any important ways? Focus particularly on the position of sperm whales. Are the branch lengths different? What does this tell you about the importance of modeling rate heterogeneity?
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 5.3:</strong> The GTR+I+G model has more parameters than GTR alone. Could you test whether the additional parameters are statistically justified? What approach would you use?
+        </div>
+
+        <h2><span class="section-number">6.</span> Likelihood Ratio Tests for Model Comparison</h2>
+
+        <h3>6.1 Nested Models and Hypothesis Testing</h3>
+        <p>
+            When two models are nested (i.e., one is a special case of the other), we can use a likelihood ratio test (LRT) to determine if the more complex model provides a significantly better fit to the data.
+        </p>
+        
+        <p>
+            The test statistic is:
+        </p>
+        <p style="text-align: center; font-style: italic;">
+            LRT = 2(lnL<sub>complex</sub> - lnL<sub>simple</sub>)
+        </p>
+        
+        <p>
+            Under the null hypothesis that the simpler model is adequate, this statistic follows a chi-squared distribution with degrees of freedom equal to the difference in the number of parameters between the models.
+        </p>
+
+        <h3>6.2 Performing Likelihood Ratio Tests</h3>
+        <p>
+            Using the log-likelihood values from your previous analyses, you can perform LRTs. For example, to test whether adding gamma-distributed rate heterogeneity (+G) significantly improves the fit:
+        </p>
+        <ol>
+            <li>Extract lnL values from <code>no_rate_het.iqtree</code> and <code>with_gamma.iqtree</code></li>
+            <li>Calculate: LRT = 2(lnL<sub>GTR+G</sub> - lnL<sub>GTR</sub>)</li>
+            <li>Compare to χ² distribution with df = 1 (one additional parameter: α)</li>
+            <li>If LRT > 3.84 (critical value at p=0.05 for df=1), reject the simpler model</li>
+        </ol>
+
+        <div style="background-color: #fafafa; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #ddd;">
+            <h4 style="margin-top: 0; color: #34495e;">Example: Chi-squared Distribution and LRT Statistic</h4>
+            <p>
+                The plot below shows the χ² distribution with 1 degree of freedom (df=1), which is used to evaluate the significance of a likelihood ratio test when comparing models that differ by one parameter. The red shaded area represents the rejection region (α = 0.05), and the critical value is shown at χ² = 3.84.
+            </p>
+            <canvas id="lrtPlot" width="700" height="400" style="display: block; margin: 20px auto; border: 1px solid #ccc; background-color: white;"></canvas>
+            <p style="text-align: center; font-size: 0.9em; color: #666;">
+                <strong>Example:</strong> If LRT = 8.5 (shown in blue), it exceeds the critical value, so we reject the null hypothesis that the simpler model is adequate (p &lt; 0.05).
+            </p>
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 6.1:</strong> Perform LRTs to compare GTR vs. GTR+G, GTR vs. GTR+I, and GTR+G vs. GTR+I+G. Which comparisons show significant improvement? What does this tell you about the nature of rate variation in your dataset?
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 6.2:</strong> What are the assumptions of the likelihood ratio test? Consider the assumption that the simpler model is nested within the more complex one. Can you use LRT to compare GTR+G versus GTR+I? Why or why not?
+        </div>
+
+        <h3>6.3 Model Selection Criteria: AIC and BIC</h3>
+        <p>
+            When models are not nested, we cannot use LRT. Instead, we use information criteria:
+        </p>
+        <ul>
+            <li><strong>Akaike Information Criterion (AIC):</strong> AIC = -2lnL + 2k<br/>
+                Balances model fit with complexity; lower values indicate better models</li>
+            <li><strong>Bayesian Information Criterion (BIC):</strong> BIC = -2lnL + k·ln(n)<br/>
+                Imposes a stronger penalty for complexity than AIC, especially with larger sample sizes (n)</li>
+        </ul>
+
+        <div class="question">
+            <strong>Discussion Question 6.3:</strong> Calculate AIC and BIC values for your four models using the log-likelihoods and the number of parameters (k) from the IQ-TREE output. Do AIC and BIC agree on the best model? If not, which would you trust more and why?
+        </div>
+
+        <h2><span class="section-number">7.</span> Bootstrap Support for Phylogenetic Hypotheses</h2>
+
+        <h3>7.1 Why Do We Need Bootstrap Support?</h3>
+        <p>
+            A single ML tree represents a point estimate of the phylogeny. However, we need to quantify our confidence in different parts of the tree. Some clades may be strongly supported by the data, while others may be uncertain due to limited phylogenetic signal or conflicting signals.
+        </p>
+        
+        <p>
+            The bootstrap is a resampling method that provides a measure of support for each clade in the tree. It works by:
+        </p>
+        <ol>
+            <li>Creating pseudo-replicate datasets by randomly resampling columns (sites) from the alignment with replacement</li>
+            <li>Inferring a tree from each bootstrap replicate</li>
+            <li>Counting how often each clade from the original ML tree appears in the bootstrap trees</li>
+            <li>Reporting this frequency as a percentage (bootstrap support value)</li>
+        </ol>
+
+        <div class="question">
+            <strong>Discussion Question 7.1:</strong> What does a bootstrap value of 95% for a particular clade mean? Does it mean there is a 95% probability that the clade is correct? Why or why not?
+        </div>
+
+        <h3>7.2 Running Bootstrap Analysis in IQ-TREE</h3>
+        <p>
+            IQ-TREE offers an ultrafast bootstrap approximation (UFBoot) that is much faster than standard bootstrapping while providing similar accuracy. It can also correct for potential bootstrap support overestimation.
+        </p>
+
+        <p>Run a full analysis with UFBoot bootstrap (1000 replicates) using the best model:</p>
+        <div class="command">
+iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -bb 1000 -pre final_tree
+        </div>
+
+        <p>
+            The <code>-bb 1000</code> flag performs 1000 ultrafast bootstrap replicates. IQ-TREE will:
+        </p>
+        <ul>
+            <li>Perform model selection (or use your specified model)</li>
+            <li>Infer the ML tree</li>
+            <li>Compute bootstrap support values</li>
+            <li>Output a consensus tree with support values</li>
+        </ul>
+
+        <div class="note">
+            <strong>Note:</strong> For more conservative estimates, you can also run standard bootstrap with <code>-b 1000</code>, though this will take considerably longer.
+        </div>
+
+        <h3>7.3 Interpreting Bootstrap Values</h3>
+        <p>
+            General guidelines for interpreting bootstrap support:
+        </p>
+        <ul>
+            <li><strong>≥95%:</strong> Strong support; clade is highly reliable</li>
+            <li><strong>70-94%:</strong> Moderate support; clade is reasonably well-supported</li>
+            <li><strong>&lt;70%:</strong> Weak support; clade is uncertain and should be interpreted cautiously</li>
+        </ul>
+
+        <div class="question">
+            <strong>Discussion Question 7.2:</strong> Examine your final tree (<code>final_tree.treefile</code>) with bootstrap values. Which clades have strong support? Focus on the position of sperm whales—is this placement well-supported? Are there any poorly supported nodes? What might explain weak support for certain relationships?
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 7.3:</strong> Compare the computational time required for UFBoot versus the time you would expect for 1000 standard bootstrap replicates (you can estimate this from the time taken for your initial ML tree search × 1000). In what situations might you prefer standard bootstrap over UFBoot despite the computational cost?
+        </div>
+
+        <h2><span class="section-number">8.</span> Monophyly and Phylogenetic Hypotheses</h2>
+
+        <h3>8.1 Defining Monophyly</h3>
+        <p>
+            A monophyletic group (clade) consists of an ancestor and all of its descendants. Monophyly is distinct from:
+        </p>
+        <ul>
+            <li><strong>Paraphyly:</strong> A group containing an ancestor and some, but not all, descendants</li>
+            <li><strong>Polyphyly:</strong> A group that does not include the most recent common ancestor of all members</li>
+        </ul>
+        
+        <p>
+            Testing monophyly is crucial in systematics because:
+        </p>
+        <ul>
+            <li>Only monophyletic groups should be recognized as natural taxa</li>
+            <li>Monophyly tests can evaluate traditional taxonomic classifications</li>
+            <li>They can test biogeographic or ecological hypotheses (e.g., "Are all deep-diving cetaceans monophyletic?")</li>
+        </ul>
+
+        <h3>8.2 Testing Monophyly Hypotheses</h3>
+        <p>
+            You can use IQ-TREE to test whether a specified group is monophyletic by constraining the tree topology and comparing the constrained and unconstrained likelihoods.
+        </p>
+
+        <p>For example, to test if all Odontoceti (excluding sperm whales) form a clade, create a constraint file:</p>
+        <div class="command">
+# Create a file named constraint.txt with taxa that should be monophyletic
+# Each group on a separate line, with species names separated by commas
+        </div>
+
+        <p>Then run IQ-TREE with the constraint:</p>
+        <div class="command">
+iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -g constraint.txt -pre constrained
+        </div>
+
+        <p>Compare the log-likelihood of the constrained tree to your unconstrained tree to test the hypothesis.</p>
+
+        <div class="question">
+            <strong>Discussion Question 8.1:</strong> Based on your final tree, are the following groups monophyletic: (a) All cetaceans (excluding hippos)? (b) All Odontoceti (toothed whales)? (c) All Mysticeti (baleen whales)? What does this tell you about the evolutionary history of whales?
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 8.2:</strong> If you find that a traditionally recognized taxonomic group is not monophyletic in your tree, what are possible explanations? Consider data limitations, model inadequacy, and biological phenomena such as incomplete lineage sorting or hybridization.
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 8.3:</strong> Why is the position of the hippopotamus as an outgroup to cetaceans critical for rooting the tree? What would happen if you rooted the tree at a different position, such as within the cetaceans?
+        </div>
+
+        <h2><span class="section-number">9.</span> Synthesis and Conclusions</h2>
+
+        <h3>9.1 Interpreting Your Results</h3>
+        <p>
+            By now, you should have:
+        </p>
+        <ul>
+            <li>A well-supported ML phylogeny of Whippomorpha</li>
+            <li>Understanding of how different substitution models and rate heterogeneity affect tree inference</li>
+            <li>Knowledge of how to compare models statistically</li>
+            <li>Confidence estimates for different clades via bootstrap support</li>
+            <li>Ability to evaluate monophyly hypotheses</li>
+        </ul>
+
+        <h3>9.2 The Bigger Picture</h3>
+        <p>
+            This practical has introduced you to core concepts in molecular phylogenetics that apply broadly across evolutionary biology. The methods you've learned are used to:
+        </p>
+        <ul>
+            <li>Reconstruct the tree of life</li>
+            <li>Trace the origins and spread of pathogens</li>
+            <li>Understand the evolution of development and morphology</li>
+            <li>Inform conservation priorities</li>
+            <li>Study molecular evolution and natural selection</li>
+        </ul>
+
+        <div class="question">
+            <strong>Discussion Question 9.1:</strong> Reflect on the entire analytical pipeline from sequence alignment to final tree. What were the most critical decisions you made? Where do you think uncertainty was highest? If you were to improve this analysis, what additional data or methods would you employ?
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 9.2:</strong> How might your conclusions change if you analyzed a different gene, such as a nuclear gene instead of mitochondrial COI? What are the advantages and disadvantages of single-gene phylogenies versus phylogenomic approaches using hundreds or thousands of genes?
+        </div>
+
+        <div class="question">
+            <strong>Discussion Question 9.3:</strong> Consider the fossil record of cetacean evolution, which shows a series of transitional forms from terrestrial ancestors to fully aquatic whales. How does molecular phylogenetics complement paleontological evidence? What questions can each approach answer that the other cannot?
+        </div>
+
+        <h2><span class="section-number">10.</span> Additional Challenges (Optional)</h2>
+
+        <p>For students wishing to explore further:</p>
+        <ol>
+            <li><strong>Codon-based models:</strong> COI is protein-coding. Investigate codon-based substitution models that account for the genetic code and can distinguish synonymous from non-synonymous substitutions.</li>
+            <li><strong>Partition models:</strong> Analyze codon positions (1st, 2nd, 3rd) separately using partitioned models to see if this improves the tree.</li>
+            <li><strong>Alternative data:</strong> Obtain sequences from a different mitochondrial gene (e.g., Cytochrome B) or a nuclear gene and compare the resulting phylogenies.</li>
+            <li><strong>Molecular clock analysis:</strong> Use a molecular clock model to estimate divergence times for key nodes in the Whippomorpha phylogeny.</li>
+            <li><strong>Ancestral state reconstruction:</strong> Infer the ecological characteristics (e.g., diving depth, feeding strategy) of ancestral cetaceans.</li>
+        </ol>
+
+        <h2>References and Further Reading</h2>
+        
+        <ul>
+            <li>Felsenstein, J. (2004). <em>Inferring Phylogenies</em>. Sinauer Associates.</li>
+            <li>Yang, Z. (2014). <em>Molecular Evolution: A Statistical Approach</em>. Oxford University Press.</li>
+            <li>Minh, B.Q., et al. (2020). IQ-TREE 2: New models and efficient methods for phylogenetic inference in the genomic era. <em>Molecular Biology and Evolution</em>, 37(5):1530-1534.</li>
+            <li>Gatesy, J., et al. (2013). A phylogenetic blueprint for a modern whale. <em>Molecular Phylogenetics and Evolution</em>, 66(2):479-506.</li>
+            <li>McGowen, M.R., et al. (2020). Phylogenomic resolution of the cetacean tree of life using target sequence capture. <em>Systematic Biology</em>, 69(3):479-501.</li>
+            <li>Nikaido, M., et al. (1999). Phylogenetic relationships among cetartiodactyls based on insertions of short and long interspersed elements: Hippopotamuses are the closest extant relatives of whales. <em>Proceedings of the National Academy of Sciences</em>, 96(18):10261-10266.</li>
+        </ul>
+
+        <hr style="margin-top: 40px; margin-bottom: 20px;">
+        
+        <p style="text-align: center; color: #7f8c8d; font-size: 0.9em;">
+            <em>This practical was designed for graduate-level students in evolutionary biology, bioinformatics, and related fields.</em>
+        </p>
+    </div>
+
+    <script>
+        // Draw the Chi-squared distribution plot for LRT
+        function drawLRTPlot() {
+            const canvas = document.getElementById('lrtPlot');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 50;
+            const plotWidth = width - 2 * padding;
+            const plotHeight = height - 2 * padding;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Chi-squared PDF for df=1
+            function chiSquaredPDF(x, df) {
+                if (x <= 0) return 0;
+                const k = df / 2;
+                const gamma_k = Math.sqrt(Math.PI / 2); // Gamma(1/2) for df=1
+                return Math.pow(x, k - 1) * Math.exp(-x / 2) / (Math.pow(2, k) * gamma_k);
+            }
+            
+            // Set up scale
+            const maxX = 15;
+            const minX = 0;
+            const maxY = 0.8;
+            
+            const scaleX = (x) => padding + (x / maxX) * plotWidth;
+            const scaleY = (y) => height - padding - (y / maxY) * plotHeight;
+            
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, scaleY(0));
+            ctx.lineTo(width - padding, scaleY(0));
+            ctx.moveTo(padding, scaleY(0));
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+            
+            // Draw axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('χ² value', width / 2, height - 10);
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Probability Density', 0, 0);
+            ctx.restore();
+            
+            // Draw x-axis tick marks and labels
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.font = '12px Arial';
+            for (let x = 0; x <= maxX; x += 3) {
+                const px = scaleX(x);
+                ctx.fillText(x.toString(), px, scaleY(0) + 5);
+                ctx.beginPath();
+                ctx.moveTo(px, scaleY(0));
+                ctx.lineTo(px, scaleY(0) + 5);
+                ctx.stroke();
+            }
+            
+            // Calculate chi-squared distribution curve
+            const points = [];
+            const step = 0.05;
+            for (let x = 0.01; x <= maxX; x += step) {
+                points.push({ x: x, y: chiSquaredPDF(x, 1) });
+            }
+            
+            // Critical value at p=0.05 for df=1
+            const criticalValue = 3.841;
+            const exampleLRT = 8.5;
+            
+            // Fill rejection region (red shaded area)
+            ctx.fillStyle = 'rgba(255, 99, 71, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(scaleX(criticalValue), scaleY(0));
+            for (let x = criticalValue; x <= maxX; x += step) {
+                const y = chiSquaredPDF(x, 1);
+                ctx.lineTo(scaleX(x), scaleY(y));
+            }
+            ctx.lineTo(scaleX(maxX), scaleY(0));
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw the chi-squared distribution curve
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(scaleX(points[0].x), scaleY(points[0].y));
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(scaleX(points[i].x), scaleY(points[i].y));
+            }
+            ctx.stroke();
+            
+            // Draw critical value line
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(scaleX(criticalValue), scaleY(0));
+            ctx.lineTo(scaleX(criticalValue), scaleY(chiSquaredPDF(criticalValue, 1)));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Label critical value
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Critical value', scaleX(criticalValue), scaleY(0) + 20);
+            ctx.fillText('χ² = 3.84', scaleX(criticalValue), scaleY(0) + 35);
+            ctx.fillText('(p = 0.05)', scaleX(criticalValue), scaleY(0) + 50);
+            
+            // Draw example LRT statistic
+            ctx.strokeStyle = '#2196f3';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(scaleX(exampleLRT), scaleY(0));
+            ctx.lineTo(scaleX(exampleLRT), scaleY(chiSquaredPDF(exampleLRT, 1)));
+            ctx.stroke();
+            
+            // Draw arrow and label for example LRT
+            ctx.fillStyle = '#2196f3';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Example LRT', scaleX(exampleLRT), padding - 20);
+            ctx.fillText('statistic = 8.5', scaleX(exampleLRT), padding - 5);
+            
+            // Draw arrow
+            ctx.strokeStyle = '#2196f3';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(scaleX(exampleLRT), padding + 5);
+            ctx.lineTo(scaleX(exampleLRT), scaleY(chiSquaredPDF(exampleLRT, 1)) - 10);
+            ctx.stroke();
+            
+            // Arrow head
+            ctx.beginPath();
+            ctx.moveTo(scaleX(exampleLRT), scaleY(chiSquaredPDF(exampleLRT, 1)) - 10);
+            ctx.lineTo(scaleX(exampleLRT) - 5, scaleY(chiSquaredPDF(exampleLRT, 1)) - 18);
+            ctx.lineTo(scaleX(exampleLRT) + 5, scaleY(chiSquaredPDF(exampleLRT, 1)) - 18);
+            ctx.closePath();
+            ctx.fillStyle = '#2196f3';
+            ctx.fill();
+            
+            // Add title
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('χ² Distribution (df = 1) for Likelihood Ratio Test', width / 2, 25);
+            
+            // Add note about rejection region
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('Reject H₀ (α = 0.05)', width - padding - 10, padding + 20);
+        }
+        
+        // Gamma distribution functions
+        function gammaFunction(z) {
+            // Lanczos approximation for gamma function
+            const g = 7;
+            const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+                       771.32342877765313, -176.61502916214059, 12.507343278686905,
+                       -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+            
+            if (z < 0.5) {
+                return Math.PI / (Math.sin(Math.PI * z) * gammaFunction(1 - z));
+            }
+            
+            z -= 1;
+            let x = c[0];
+            for (let i = 1; i < g + 2; i++) {
+                x += c[i] / (z + i);
+            }
+            
+            const t = z + g + 0.5;
+            return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+        }
+        
+        function gammaPDF(x, shape, scale) {
+            if (x <= 0) return 0;
+            const k = shape;
+            const theta = scale;
+            return Math.pow(x, k - 1) * Math.exp(-x / theta) / (Math.pow(theta, k) * gammaFunction(k));
+        }
+        
+        function incompleteGamma(s, x) {
+            // Lower incomplete gamma function using series expansion
+            if (x <= 0) return 0;
+            if (x < s + 1) {
+                let sum = 1 / s;
+                let term = 1 / s;
+                for (let n = 1; n < 100; n++) {
+                    term *= x / (s + n);
+                    sum += term;
+                    if (term < sum * 1e-10) break;
+                }
+                return Math.pow(x, s) * Math.exp(-x) * sum;
+            } else {
+                // Use continued fraction for large x
+                let a = 1 - s;
+                let b = a + x + 1;
+                let term = 0;
+                let pn = [1, x, x + 1, x * b];
+                let gamma = pn[2] / pn[3];
+                
+                for (let n = 1; n < 100; n++) {
+                    a++;
+                    b += 2;
+                    term++;
+                    const an = term * (s - term);
+                    pn[0] = b * pn[2] - an * pn[0];
+                    pn[1] = b * pn[3] - an * pn[1];
+                    
+                    if (Math.abs(pn[0]) > 1e30) {
+                        pn[0] /= 1e30;
+                        pn[1] /= 1e30;
+                        pn[2] /= 1e30;
+                        pn[3] /= 1e30;
+                    }
+                    
+                    if (pn[1] !== 0) {
+                        const oldGamma = gamma;
+                        gamma = pn[0] / pn[1];
+                        if (Math.abs(gamma - oldGamma) < Math.abs(gamma) * 1e-10) break;
+                    }
+                    
+                    pn[2] = pn[0];
+                    pn[3] = pn[1];
+                    pn[0] = b * pn[2] - an * term * (s - term);
+                    pn[1] = b * pn[3] - an * term * (s - term);
+                }
+                
+                return gammaFunction(s) - Math.pow(x, s) * Math.exp(-x) * gamma;
+            }
+        }
+        
+        function gammaQuantile(p, shape, scale) {
+            // Approximate quantile function for gamma distribution
+            if (p <= 0) return 0;
+            if (p >= 1) return Infinity;
+            
+            // Initial guess using Wilson-Hilferty approximation
+            const z = -Math.sqrt(2) * erfInv(1 - 2 * p);
+            let x = shape * Math.pow(1 - 1/(9*shape) + z/(3*Math.sqrt(shape)), 3) * scale;
+            
+            // Newton-Raphson refinement
+            for (let i = 0; i < 10; i++) {
+                const cdf = incompleteGamma(shape, x/scale) / gammaFunction(shape);
+                const pdf = gammaPDF(x, shape, scale);
+                if (pdf === 0) break;
+                const dx = (cdf - p) / pdf;
+                x -= dx;
+                if (Math.abs(dx) < 1e-6) break;
+            }
+            
+            return x;
+        }
+        
+        function erfInv(x) {
+            // Inverse error function approximation
+            const a = 0.147;
+            const b = 2 / (Math.PI * a) + Math.log(1 - x * x) / 2;
+            const sqrt1 = Math.sqrt(b * b - Math.log(1 - x * x) / a);
+            const sqrt2 = Math.sqrt(sqrt1 - b);
+            return (x < 0 ? -1 : 1) * sqrt2;
+        }
+        
+        function getDiscreteGammaRates(alpha, numCats) {
+            const beta = alpha; // Scale parameter = shape for mean = 1
+            const rates = [];
+            const probs = [];
+            
+            for (let i = 0; i < numCats; i++) {
+                const pLow = i / numCats;
+                const pHigh = (i + 1) / numCats;
+                
+                // Get quantiles
+                const qLow = gammaQuantile(pLow, alpha, 1/beta);
+                const qHigh = gammaQuantile(pHigh, alpha, 1/beta);
+                
+                // Mean rate for this category (using midpoint approximation)
+                const midQ = gammaQuantile((pLow + pHigh) / 2, alpha, 1/beta);
+                rates.push(midQ);
+                probs.push(1 / numCats);
+            }
+            
+            // Normalize so mean = 1
+            const mean = rates.reduce((sum, r) => sum + r, 0) / rates.length;
+            const normalizedRates = rates.map(r => r / mean);
+            
+            return { rates: normalizedRates, probs: probs };
+        }
+        
+        function drawGammaPlot() {
+            const canvas = document.getElementById('gammaPlot');
+            if (!canvas) return;
+            
+            // Convert log scale slider value to actual alpha
+            const alphaLog = parseFloat(document.getElementById('alphaSlider').value);
+            const alpha = Math.pow(10, alphaLog);
+            const numCats = parseInt(document.getElementById('categoriesSlider').value);
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 60;
+            const plotWidth = width - 2 * padding;
+            const plotHeight = height - 2 * padding - 50; // Extra space for info
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Get discrete rates for info display
+            const { rates, probs } = getDiscreteGammaRates(alpha, numCats);
+            const beta = alpha; // For mean = 1
+            
+            // Set up scale - x-axis to 5
+            const maxX = 5.0;
+            const maxY = Math.max(
+                gammaPDF(alpha / beta, alpha, 1/beta) * 1.2,
+                0.8
+            );
+            
+            const scaleX = (x) => padding + (x / maxX) * plotWidth;
+            const scaleY = (y) => height - padding - 40 - (y / maxY) * plotHeight;
+            
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, scaleY(0));
+            ctx.lineTo(width - padding, scaleY(0));
+            ctx.moveTo(padding, scaleY(0));
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+            
+            // Axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Relative substitution rate', width / 2, height - 10);
+            ctx.save();
+            ctx.translate(15, height / 2 - 20);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Probability Density / Frequency', 0, 0);
+            ctx.restore();
+            
+            // X-axis ticks
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.font = '12px Arial';
+            for (let i = 0; i <= 5; i++) {
+                const x = i;
+                if (x <= maxX) {
+                    const px = scaleX(x);
+                    ctx.fillText(x.toFixed(0), px, scaleY(0) + 5);
+                    ctx.beginPath();
+                    ctx.moveTo(px, scaleY(0));
+                    ctx.lineTo(px, scaleY(0) + 5);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw discrete rate category bars with equal areas (equal probability)
+            // Each bar represents 1/n probability, so area = 1/n
+            // Height = probability / width
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', 
+                          '#1abc9c', '#e67e22', '#34495e', '#16a085', '#27ae60'];
+            
+            for (let i = 0; i < numCats; i++) {
+                // Get quantile boundaries for this category
+                const qLow = i / numCats;
+                const qHigh = (i + 1) / numCats;
+                
+                // Get rate boundaries from quantiles
+                const rLow = gammaQuantile(qLow, alpha, 1/beta);
+                const rHigh = gammaQuantile(qHigh, alpha, 1/beta);
+                
+                // Bar width in rate space
+                const barWidth = rHigh - rLow;
+                
+                // Height = probability / width to get equal areas
+                const probability = 1 / numCats;
+                const barHeight = probability / barWidth;
+                
+                // Clip bar if it extends beyond maxX
+                const xStart = rLow;
+                const xEnd = Math.min(rHigh, maxX);
+                
+                if (xStart < maxX) {
+                    const x = scaleX(xStart);
+                    const y = scaleY(barHeight);
+                    const w = scaleX(xEnd) - scaleX(xStart);
+                    const h = scaleY(0) - y;
+                    
+                    ctx.fillStyle = colors[i % colors.length] + 'CC';
+                    ctx.fillRect(x, y, w, h);
+                    
+                    ctx.strokeStyle = colors[i % colors.length];
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, w, h);
+                }
+            }
+            
+            // Draw continuous gamma distribution
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            let first = true;
+            for (let x = 0.01; x <= maxX; x += 0.02) {
+                const y = gammaPDF(x, alpha, 1/beta);
+                const px = scaleX(x);
+                const py = scaleY(y);
+                if (first) {
+                    ctx.moveTo(px, py);
+                    first = false;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+            
+            // Draw mean line
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(scaleX(1), padding);
+            ctx.lineTo(scaleX(1), scaleY(0));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Mean = 1.0', scaleX(1), padding - 5);
+            
+            // Title
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Discrete Gamma Distribution (α = ${alpha.toFixed(2)}, ${numCats} categories)`, 
+                        width / 2, 25);
+            
+            // Update rate info
+            updateRateInfo(rates, probs);
+        }
+        
+        function updateRateInfo(rates, probs) {
+            const infoDiv = document.getElementById('rateInfo');
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">';
+            
+            for (let i = 0; i < rates.length; i++) {
+                html += `<div>Category ${i + 1}: rate = ${rates[i].toFixed(4)} (${(probs[i] * 100).toFixed(1)}%)</div>`;
+            }
+            
+            html += '</div>';
+            infoDiv.innerHTML = html;
+        }
+        
+        // Event listeners for sliders
+        document.addEventListener('DOMContentLoaded', function() {
+            const alphaSlider = document.getElementById('alphaSlider');
+            const categoriesSlider = document.getElementById('categoriesSlider');
+            const alphaValue = document.getElementById('alphaValue');
+            const categoriesValue = document.getElementById('categoriesValue');
+            
+            if (alphaSlider) {
+                alphaSlider.addEventListener('input', function() {
+                    const alpha = Math.pow(10, parseFloat(this.value));
+                    alphaValue.textContent = alpha < 1 ? alpha.toFixed(2) : alpha.toFixed(1);
+                    drawGammaPlot();
+                });
+                // Set initial value
+                const initialAlpha = Math.pow(10, parseFloat(alphaSlider.value));
+                alphaValue.textContent = initialAlpha.toFixed(2);
+            }
+            
+            if (categoriesSlider) {
+                categoriesSlider.addEventListener('input', function() {
+                    categoriesValue.textContent = this.value;
+                    drawGammaPlot();
+                });
+            }
+            
+            // Initial draw
+            drawGammaPlot();
+        });
+        
+        // Draw the plot when page loads
+        window.addEventListener('load', drawLRTPlot);
+    </script>
+</body>
+</html>
