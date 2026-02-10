@@ -320,13 +320,16 @@
             // Pre-calculate all quantiles to ensure monotonicity
             const quantiles = [0];
             for (let i = 1; i <= numCats; i++) {
-                const q = gammaQuantile(i / numCats, alpha, 1/beta);
-                // Ensure monotonic increase
-                const monotonic = Math.max(quantiles[i-1] + 0.0001, q);
-                quantiles.push(monotonic);
-                if (alpha > 5 && i <= 10) {
-                    console.log(`alpha=${alpha.toFixed(2)}, cat=${i}, p=${(i/numCats).toFixed(3)}, q=${q.toFixed(6)}, monotonic=${monotonic.toFixed(6)}`);
+                let q;
+                if (i === numCats) {
+                    // For the last category, use a high quantile instead of 1.0 to avoid Infinity
+                    q = gammaQuantile(0.9999, alpha, 1/beta);
+                } else {
+                    q = gammaQuantile(i / numCats, alpha, 1/beta);
                 }
+                // Ensure monotonic increase and finite values
+                const monotonic = Math.max(quantiles[i-1] + 0.0001, isFinite(q) ? q : quantiles[i-1] + 1);
+                quantiles.push(monotonic);
             }
             
             for (let i = 0; i < numCats; i++) {

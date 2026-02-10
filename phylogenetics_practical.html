@@ -1036,9 +1036,16 @@ iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -g constraint.txt -pre cons
             // Pre-calculate all quantiles to ensure monotonicity
             const quantiles = [0];
             for (let i = 1; i <= numCats; i++) {
-                const q = gammaQuantile(i / numCats, alpha, 1/beta);
-                // Ensure monotonic increase
-                quantiles.push(Math.max(quantiles[i-1] + 0.0001, q));
+                let q;
+                if (i === numCats) {
+                    // For the last category, use a high quantile instead of 1.0 to avoid Infinity
+                    q = gammaQuantile(0.9999, alpha, 1/beta);
+                } else {
+                    q = gammaQuantile(i / numCats, alpha, 1/beta);
+                }
+                // Ensure monotonic increase and finite values
+                const monotonic = Math.max(quantiles[i-1] + 0.0001, isFinite(q) ? q : quantiles[i-1] + 1);
+                quantiles.push(monotonic);
             }
             
             for (let i = 0; i < numCats; i++) {
