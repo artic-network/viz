@@ -177,6 +177,13 @@
             const expectedMean = shape * scale;
             const gammaVal = gammaFunction(shape);
             
+            // For high alpha, use Wilson-Hilferty directly (very accurate)
+            if (shape > 30) {
+                const z = Math.sqrt(2) * erfInv(2 * p - 1);
+                const w = 1 - 1/(9*shape) + z/(3*Math.sqrt(shape));
+                return shape * Math.pow(Math.max(0.001, w), 3) * scale;
+            }
+            
             // Establish bracket [lower, upper] where CDF(lower) < p < CDF(upper)
             let lower = 0;
             let upper = expectedMean * 3;
@@ -195,17 +202,17 @@
             // Ensure initial guess is within bracket
             x = Math.max(lower, Math.min(upper, x));
             
-            // Hybrid iteration with tighter convergence
-            const tolerance = 1e-12; // Much tighter tolerance
-            for (let i = 0; i < 200; i++) {
+            // Hybrid iteration with very tight convergence
+            const absTolerance = 1e-14;
+            const relTolerance = 1e-13;
+            
+            for (let i = 0; i < 300; i++) {
                 const cdf = incompleteGamma(shape, x/scale) / gammaVal;
                 const error = cdf - p;
                 
-                // Check convergence
-                if (Math.abs(error) < tolerance) break;
-                
-                // Also check if bracket is tight enough
-                if (upper - lower < tolerance * x) break;
+                // Check convergence - both absolute and relative
+                if (Math.abs(error) < absTolerance) break;
+                if (upper - lower < relTolerance * (lower + upper)) break;
                 
                 // Update bracket
                 if (error < 0) {
@@ -220,8 +227,8 @@
                     const delta = error / pdf;
                     const xNew = x - delta;
                     
-                    // Accept Newton-Raphson only if within bracket with margin
-                    const margin = (upper - lower) * 0.01;
+                    // Accept Newton-Raphson only if within bracket with small margin
+                    const margin = (upper - lower) * 0.001;
                     if (xNew > lower + margin && xNew < upper - margin) {
                         x = xNew;
                         continue;
