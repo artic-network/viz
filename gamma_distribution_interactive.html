@@ -307,8 +307,12 @@
                 const qHigh = (i + 1) / numCats;
                 
                 // Get rate boundaries from quantiles
-                const rLow = gammaQuantile(qLow, alpha, 1/beta);
-                const rHigh = gammaQuantile(qHigh, alpha, 1/beta);
+                let rLow = gammaQuantile(qLow, alpha, 1/beta);
+                let rHigh = gammaQuantile(qHigh, alpha, 1/beta);
+                
+                // Bounds checking to handle numerical issues
+                rLow = Math.max(0.001, rLow);  // Ensure non-negative and avoid zero
+                rHigh = Math.max(rLow + 0.001, rHigh);  // Ensure rHigh > rLow
                 
                 // Calculate mean PDF over this interval using numerical integration
                 const nSteps = 50;
@@ -323,18 +327,20 @@
                 const xStart = rLow;
                 const xEnd = Math.min(rHigh, maxX);
                 
-                if (xStart < maxX) {
+                if (xStart < maxX && barHeight > 0 && isFinite(barHeight)) {
                     const x = scaleX(xStart);
                     const y = scaleY(barHeight);
                     const w = scaleX(xEnd) - scaleX(xStart);
                     const h = scaleY(0) - y;
                     
-                    ctx.fillStyle = colors[i % colors.length] + 'CC';
-                    ctx.fillRect(x, y, w, h);
-                    
-                    ctx.strokeStyle = colors[i % colors.length];
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(x, y, w, h);
+                    if (w > 0 && h > 0) {
+                        ctx.fillStyle = colors[i % colors.length] + 'CC';
+                        ctx.fillRect(x, y, w, h);
+                        
+                        ctx.strokeStyle = colors[i % colors.length];
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, y, w, h);
+                    }
                 }
             }
             
