@@ -893,8 +893,8 @@ iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -g constraint.txt -pre cons
             const expectedMean = shape * scale;
             const gammaVal = gammaFunction(shape);
             
-            // For high alpha, use Wilson-Hilferty directly (very accurate)
-            if (shape > 20) {
+            // For moderate to high alpha, use Wilson-Hilferty directly (accurate for alpha > 2)
+            if (shape > 2) {
                 const z = Math.sqrt(2) * erfInv(2 * p - 1);
                 const w = 1 - 1/(9*shape) + z/(3*Math.sqrt(shape));
                 return shape * Math.pow(Math.max(0.001, w), 3) * scale;
