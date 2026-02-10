@@ -894,29 +894,55 @@ iqtree -s whippomorpha_COI_aligned.fasta -m GTR+I+G4 -g constraint.txt -pre cons
                 // Normal approximation: Gamma(alpha, beta) ≈ N(alpha*theta, alpha*theta^2)
                 const mean = shape * scale;
                 const std = Math.sqrt(shape) * scale;
-                // Inverse normal using error function
                 const z = Math.sqrt(2) * erfInv(2 * p - 1);
                 return Math.max(0.001, mean + z * std);
             }
             
-            // Initial guess using Wilson-Hilferty approximation
-            const z = -Math.sqrt(2) * erfInv(1 - 2 * p);
-            let x = shape * Math.pow(Math.max(0, 1 - 1/(9*shape) + z/(3*Math.sqrt(shape))), 3) * scale;
+            // Wilson-Hilferty transformation for initial guess
+            const z = Math.sqrt(2) * erfInv(2 * p - 1);
+            const w = 1 - 1/(9*shape) + z/(3*Math.sqrt(shape));
+            let x = shape * Math.pow(Math.max(0.01, w), 3) * scale;
             x = Math.max(0.001, x);
             
-            // Newton-Raphson refinement with better convergence checks
-            for (let i = 0; i < 20; i++) {
+            // Sanity check on initial guess
+            const expectedMean = shape * scale;
+            if (x > expectedMean * 10) {
+                // Initial guess is way off, use simpler estimate
+                x = expectedMean * (1 + z / Math.sqrt(shape));
+                x = Math.max(0.001, x);
+            }
+            
+            // Newton-Raphson with safeguards
+            let lastX = x;
+            for (let i = 0; i < 30; i++) {
                 const cdf = incompleteGamma(shape, x/scale) / gammaFunction(shape);
                 const pdf = gammaPDF(x, shape, scale);
-                if (pdf === 0 || !isFinite(pdf)) break;
+                
+                if (!isFinite(cdf) || !isFinite(pdf) || pdf === 0) {
+                    // Numerical issues, return best guess
+                    return Math.max(0.001, lastX);
+                }
                 
                 const error = cdf - p;
-                if (Math.abs(error) < 1e-8) break;
+                if (Math.abs(error) < 1e-10) break;
                 
                 const dx = error / pdf;
-                x = Math.max(0.001, x - dx);
                 
-                if (Math.abs(dx) < 1e-8 * x) break;
+                // Limit step size to prevent wild jumps
+                const maxStep = x * 0.5;
+                const limitedDx = Math.max(-maxStep, Math.min(maxStep, dx));
+                
+                lastX = x;
+                x = Math.max(0.001, x - limitedDx);
+                
+                // Check for convergence
+                if (Math.abs(limitedDx) < 1e-10 * x) break;
+                
+                // Check if we're oscillating or diverging
+                if (i > 10 && Math.abs(x - lastX) > Math.abs(dx)) {
+                    // Not converging well, return current best
+                    return x;
+                }
             }
             
             return x;
