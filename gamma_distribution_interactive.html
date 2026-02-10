@@ -173,18 +173,34 @@
             if (p <= 0) return 0;
             if (p >= 1) return Infinity;
             
+            // For high alpha values, use normal approximation
+            if (shape > 50) {
+                // Normal approximation: Gamma(alpha, beta) ≈ N(alpha*theta, alpha*theta^2)
+                const mean = shape * scale;
+                const std = Math.sqrt(shape) * scale;
+                // Inverse normal using error function
+                const z = Math.sqrt(2) * erfInv(2 * p - 1);
+                return Math.max(0.001, mean + z * std);
+            }
+            
             // Initial guess using Wilson-Hilferty approximation
             const z = -Math.sqrt(2) * erfInv(1 - 2 * p);
-            let x = shape * Math.pow(1 - 1/(9*shape) + z/(3*Math.sqrt(shape)), 3) * scale;
+            let x = shape * Math.pow(Math.max(0, 1 - 1/(9*shape) + z/(3*Math.sqrt(shape))), 3) * scale;
+            x = Math.max(0.001, x);
             
-            // Newton-Raphson refinement
-            for (let i = 0; i < 10; i++) {
+            // Newton-Raphson refinement with better convergence checks
+            for (let i = 0; i < 20; i++) {
                 const cdf = incompleteGamma(shape, x/scale) / gammaFunction(shape);
                 const pdf = gammaPDF(x, shape, scale);
-                if (pdf === 0) break;
-                const dx = (cdf - p) / pdf;
-                x -= dx;
-                if (Math.abs(dx) < 1e-6) break;
+                if (pdf === 0 || !isFinite(pdf)) break;
+                
+                const error = cdf - p;
+                if (Math.abs(error) < 1e-8) break;
+                
+                const dx = error / pdf;
+                x = Math.max(0.001, x - dx);
+                
+                if (Math.abs(dx) < 1e-8 * x) break;
             }
             
             return x;
@@ -301,18 +317,18 @@
             const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', 
                           '#1abc9c', '#e67e22', '#34495e', '#16a085', '#27ae60'];
             
+            // Pre-calculate all quantiles to ensure monotonicity
+            const quantiles = [0];
+            for (let i = 1; i <= numCats; i++) {
+                const q = gammaQuantile(i / numCats, alpha, 1/beta);
+                // Ensure monotonic increase
+                quantiles.push(Math.max(quantiles[i-1] + 0.0001, q));
+            }
+            
             for (let i = 0; i < numCats; i++) {
-                // Get quantile boundaries for this category
-                const qLow = i / numCats;
-                const qHigh = (i + 1) / numCats;
-                
-                // Get rate boundaries from quantiles
-                let rLow = gammaQuantile(qLow, alpha, 1/beta);
-                let rHigh = gammaQuantile(qHigh, alpha, 1/beta);
-                
-                // Bounds checking to handle numerical issues
-                rLow = Math.max(0.001, rLow);  // Ensure non-negative and avoid zero
-                rHigh = Math.max(rLow + 0.001, rHigh);  // Ensure rHigh > rLow
+                // Get rate boundaries from pre-calculated quantiles
+                const rLow = quantiles[i];
+                const rHigh = quantiles[i + 1];
                 
                 // Calculate mean PDF over this interval using numerical integration
                 const nSteps = 50;
@@ -333,7 +349,7 @@
                     const w = scaleX(xEnd) - scaleX(xStart);
                     const h = scaleY(0) - y;
                     
-                    if (w > 0 && h > 0) {
+                    if (w > 0 && h > 0 && isFinite(w) && isFinite(h)) {
                         ctx.fillStyle = colors[i % colors.length] + 'CC';
                         ctx.fillRect(x, y, w, h);
                         
