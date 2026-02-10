@@ -296,8 +296,8 @@
             }
             
             // Draw discrete rate category bars
-            // Heights match the gamma PDF at the category's mean rate for better visual fit
-            // Widths are determined by quantiles (equal probability regions)
+            // Heights are the mean PDF value over each quantile interval
+            // This ensures the continuous curve intersects each bar's top edge naturally
             const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', 
                           '#1abc9c', '#e67e22', '#34495e', '#16a085', '#27ae60'];
             
@@ -310,11 +310,14 @@
                 const rLow = gammaQuantile(qLow, alpha, 1/beta);
                 const rHigh = gammaQuantile(qHigh, alpha, 1/beta);
                 
-                // Use the mean rate for this category (from discretization)
-                const meanRate = rates[i];
-                
-                // Height matches the gamma PDF at the mean rate
-                const barHeight = gammaPDF(meanRate, alpha, 1/beta);
+                // Calculate mean PDF over this interval using numerical integration
+                const nSteps = 50;
+                let sumPDF = 0;
+                for (let j = 0; j < nSteps; j++) {
+                    const r = rLow + (rHigh - rLow) * (j + 0.5) / nSteps;
+                    sumPDF += gammaPDF(r, alpha, 1/beta);
+                }
+                const barHeight = sumPDF / nSteps;
                 
                 // Clip bar if it extends beyond maxX
                 const xStart = rLow;
