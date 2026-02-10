@@ -332,9 +332,9 @@ iqtree -s whippomorpha_COI_aligned.fasta -m MFP -pre model_selection
             <div style="margin: 20px 0; display: flex; gap: 30px; align-items: center; flex-wrap: wrap;">
                 <div>
                     <label for="alphaSlider" style="font-weight: bold; display: block; margin-bottom: 5px;">
-                        Shape parameter (α): <span id="alphaValue" style="color: #3498db;">0.1</span>
+                        Shape parameter (α): <span id="alphaValue" style="color: #3498db;">1</span>
                     </label>
-                    <input type="range" id="alphaSlider" min="-1" max="2" step="0.02" value="-1" 
+                    <input type="range" id="alphaSlider" min="-1" max="2" step="0.02" value="0" 
                            style="width: 250px; cursor: pointer;">
                     <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
                         Lower α = more rate variation (log scale: 0.1 to 100)
@@ -343,9 +343,9 @@ iqtree -s whippomorpha_COI_aligned.fasta -m MFP -pre model_selection
                 
                 <div>
                     <label for="categoriesSlider" style="font-weight: bold; display: block; margin-bottom: 5px;">
-                        Number of categories: <span id="categoriesValue" style="color: #3498db;">4</span>
+                        Number of categories: <span id="categoriesValue" style="color: #3498db;">8</span>
                     </label>
-                    <input type="range" id="categoriesSlider" min="2" max="10" step="1" value="4" 
+                    <input type="range" id="categoriesSlider" min="2" max="16" step="1" value="8" 
                            style="width: 250px; cursor: pointer;">
                     <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
                         IQ-TREE typically uses 4 categories
