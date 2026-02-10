@@ -328,8 +328,15 @@
                     q = gammaQuantile(i / numCats, alpha, 1/beta);
                 }
                 // Ensure monotonic increase and finite values
-                const monotonic = Math.max(quantiles[i-1] + 0.0001, isFinite(q) ? q : quantiles[i-1] + 1);
+                // Use a larger minimum increment to prevent numerical issues
+                const minIncrement = 0.01;
+                const monotonic = Math.max(quantiles[i-1] + minIncrement, isFinite(q) ? q : quantiles[i-1] + 0.1);
                 quantiles.push(monotonic);
+                
+                // Debug logging
+                if (i <= numCats) {
+                    console.log(`alpha=${alpha.toFixed(2)}, cat=${i}/${numCats}, p=${(i/numCats).toFixed(4)}, q=${isFinite(q) ? q.toFixed(6) : 'inf'}, monotonic=${monotonic.toFixed(6)}`);
+                }
             }
             
             for (let i = 0; i < numCats; i++) {
